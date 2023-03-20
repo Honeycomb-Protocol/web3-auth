@@ -20,7 +20,6 @@ router.post("/update", async (req: Request, res: Response) => {
 
   user.name = name;
   req.session.web3User = user.toJSON();
-  req.orm.em.flush();
   response.ok();
 });
 
