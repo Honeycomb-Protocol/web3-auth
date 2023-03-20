@@ -1,10 +1,9 @@
 import * as anchor from "@project-serum/anchor";
 
 export interface Project {
-  program: string;
-  address: string;
-  key: number[];
   rpc?: string;
+  address: string;
+  driver: number[];
 }
 
 export interface Config<T extends anchor.Idl> {

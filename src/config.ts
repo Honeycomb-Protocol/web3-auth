@@ -1,52 +1,55 @@
-import * as anchor from "@project-serum/anchor";
 import * as web3 from "@solana/web3.js";
 import fs from "fs";
 import dotenv from "dotenv";
-import { Config, Project } from "./types";
+import { Project } from "./types";
+import {
+  Honeycomb,
+  HoneycombProject,
+  identityModule,
+} from "@honeycomb-protocol/hive-control";
 
 dotenv.config();
 
-export const PROD = process.env.PROD === "true";
+const config = {
+  node_env: process.env.NODE_ENV,
+  port: process.env.PORT || 4000,
+  cors_origin: process.env.CORS_ORIGIN || "*",
+  request_limit: process.env.REQUEST_LIMIT || "100kb",
+  jwt_secret: process.env.JWT_SECRET || "secret",
+  rpc_url: process.env.RPC_URL || "https://api.mainnet-beta.solana.com",
+  db_name: process.env.DB_NAME || "temp",
+} as { [k: string]: string };
+export default config;
 
-const IDL: any = {};
-
-const devnetRpc = "https://api.devnet.solana.com";
-const mainnetdRpc =
-  process.env.RPC_URL || "https://api.mainnet-beta.solana.com";
-
-const projects = JSON.parse(fs.readFileSync("./projects.json").toString());
-
-export const getConfig = <T extends anchor.Idl = any>(
+export const projects = JSON.parse(
+  fs.readFileSync("./projects.json").toString()
+);
+export async function getHoneycomb(
   projectName: string,
   opts?: web3.ConfirmOptions
-): Config<T> => {
+) {
   const project: Project = projects[projectName];
   if (!project) throw new Error("Project not found");
 
-  const RPC = project.rpc || projectName !== "devnet" ? mainnetdRpc : devnetRpc;
-
-  const connection = new web3.Connection(RPC);
-
-  const wallet = new anchor.Wallet(
-    web3.Keypair.fromSecretKey(Uint8Array.from(project.key))
-  );
+  const RPC = project.rpc || config.rpc_url;
 
   if (!opts) {
     opts = {
-      preflightCommitment: "singleGossip",
+      commitment: "processed",
+      skipPreflight: false,
     };
   }
-  const provider = new anchor.AnchorProvider(connection, wallet, opts);
 
-  return {
-    wallet,
-    connection,
-    provider,
-    program: new anchor.Program<T>(
-      IDL,
-      new web3.PublicKey(project.program),
-      provider
-    ),
-    project: new web3.PublicKey(project.address),
-  };
-};
+  const honeycomb = new Honeycomb(new web3.Connection(RPC, opts));
+  honeycomb.use(
+    identityModule(web3.Keypair.fromSecretKey(Uint8Array.from(project.driver)))
+  );
+  honeycomb.use(
+    await HoneycombProject.fromAddress(
+      honeycomb.connection,
+      new web3.PublicKey(project.address)
+    )
+  );
+
+  return honeycomb;
+}

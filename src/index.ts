@@ -7,6 +7,8 @@ import routes from "./controllers";
 import { connectDB, sessionStore } from "./utils";
 import { Request } from "./types";
 import session from "express-session";
+import { refreshData, startSocket } from "./sockets";
+import { getHoneycomb } from "./config";
 
 dotenv.config();
 
@@ -46,8 +48,14 @@ app.use("/check", (_, res) => res.status(200).send("Server Running..."));
 
 (async () => {
   const orm = await connectDB(process.env.DB_NAME || "temp_db");
+  const honeycomb = await getHoneycomb("devnet");
+
+  await refreshData(honeycomb, orm);
+  await startSocket(honeycomb, orm);
+
   app.use((req: Request, _res, next) => {
     req.orm = orm;
+    req.honeycomb = honeycomb;
     next();
   });
 

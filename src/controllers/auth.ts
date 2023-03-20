@@ -1,6 +1,7 @@
 import { TransactionSignature } from "@honeycomb-protocol/hive-control";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import express, { Response } from "express";
+import { authenticate } from "../middlewares";
 import { User } from "../models";
 
 import { Request } from "../types";
@@ -90,12 +91,20 @@ router.post("/refresh", (req: Request, res) => {
   });
 });
 
-router.get("/user", (req: Request, res: Response) => {
-  console.log(req.session);
+router.get("/session-user", (req: Request, res: Response) => {
   if (req.session.web3User) {
     res.send("You are logged in as " + req.session.web3User.address);
   } else {
     res.send("Please log in");
+  }
+});
+
+router.get("/user", authenticate, (req: Request, res: Response) => {
+  const response = new ResponseHelper(res);
+  if (req.user) {
+    return response.ok(undefined, req.user);
+  } else {
+    return response.unauthorized();
   }
 });
 
