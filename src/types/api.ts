@@ -1,4 +1,7 @@
+import { MikroORM } from "@mikro-orm/core";
+import { SqliteDriver } from "@mikro-orm/sqlite";
 import { Request as ExpressRequest } from "express";
+import { IUser } from "../models";
 
 export type IResponse<T = any> = {
   success: boolean;
@@ -8,5 +11,7 @@ export type IResponse<T = any> = {
 };
 
 export type Request = ExpressRequest & {
-  user?: any;
+  user?: IUser;
+  orm?: MikroORM<SqliteDriver>;
+  session?: any;
 };

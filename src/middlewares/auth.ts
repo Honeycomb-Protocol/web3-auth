@@ -1,10 +1,7 @@
 import { Handler, Response, NextFunction } from "express";
+import { IUser } from "../models";
 import { Request } from "../types";
-import { ResponseHelper, verify_token } from "../utils";
-
-const fetchUser = async (user_id: number) => {
-  user_id;
-};
+import { fetchUser, ResponseHelper, verify_token } from "../utils";
 
 export const authenticate: Handler = async (
   req: Request,
@@ -12,6 +9,7 @@ export const authenticate: Handler = async (
   next: NextFunction
 ) => {
   const response = new ResponseHelper(res);
+  if (!req.orm) return response.error("ORM not found");
   if (
     req.headers.authorization &&
     req.headers.authorization.split(" ")[0] === "Bearer"
@@ -19,7 +17,9 @@ export const authenticate: Handler = async (
     const decoded = verify_token(req.headers.authorization.split(" ")[1]);
     if (!decoded) return response.unauthorized("Invalid Token");
     try {
-      req.user = await fetchUser(decoded.user_id);
+      req.user = await fetchUser(req.orm, decoded.user_address).then(
+        (x) => x?.toJSON() as IUser
+      );
       next();
     } catch {
       return response.unauthorized("Invalid Token");
@@ -35,7 +35,7 @@ export const bypass_authenticate: Handler = async (
   next: NextFunction
 ) => {
   const response = new ResponseHelper(res);
-
+  if (!req.orm) return response.error("ORM not found");
   if (
     req.headers.authorization &&
     req.headers.authorization.split(" ")[0] === "Bearer"
@@ -43,7 +43,9 @@ export const bypass_authenticate: Handler = async (
     const decoded = verify_token(req.headers.authorization.split(" ")[1]);
     if (!decoded) return response.unauthorized("Invalid Token");
     try {
-      req.user = await fetchUser(decoded.user_id);
+      req.user = await fetchUser(req.orm, decoded.user_address).then(
+        (x) => x?.toJSON() as IUser
+      );
     } catch (e) {}
   }
 

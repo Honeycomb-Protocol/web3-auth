@@ -1,19 +1,19 @@
-import color from "colors";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
+import type { SqliteDriver } from "@mikro-orm/sqlite"; // or any other driver package
+import { MikroORM } from "@mikro-orm/core";
 
-dotenv.config();
+export const connectDB = async (dbName: string) => {
+  const orm = await MikroORM.init<SqliteDriver>({
+    entities: ["./dist/models"], // path to our JS entities (dist), relative to `baseDir`
+    entitiesTs: ["./src/models"], // path to our TS entities (src), relative to `baseDir`
+    dbName: `${dbName}.sqlite`,
+    type: "sqlite",
+    allowGlobalContext: true,
+  });
 
-export const connectMongoDB = async (uri: string, dbName?: string) => {
-  return await mongoose
-    .connect(uri, {
-      dbName: dbName || "temp",
-    })
-    .then(() => {
-      console.log(color.green("[db]: MongoDB connected successfully"));
-    })
-    .catch((err: any) => {
-      console.error("[db]: Error connecting to MongoDB");
-      console.error(err);
-    });
+  await orm.getMigrator().up();
+  const generator = orm.getSchemaGenerator();
+  await generator.updateSchema();
+  await orm.getMigrator().down();
+
+  return orm;
 };

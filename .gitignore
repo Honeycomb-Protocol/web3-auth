@@ -7,3 +7,6 @@ yarn.lock
 package-lock.json
 
 dist
+projects.json
+*db*
+*.sqlite
