@@ -13,12 +13,14 @@ router.post("/update", async (req: Request, res: Response) => {
   if (!req.orm) return response.error("ORM not found");
 
   const user = await req.orm.em.findOne(User, {
-    name,
+    address: req.user?.address,
   });
 
   if (!user) return response.notFound("User not found");
 
+  user.name = name;
   req.session.web3User = user.toJSON();
+  req.orm.em.flush();
   response.ok();
 });
 
