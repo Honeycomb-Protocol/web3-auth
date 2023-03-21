@@ -67,7 +67,9 @@ export function startSocket(honeycomb: Honeycomb, orm: MikroORM) {
         const userChain = UserChain.fromAccountInfo(account.accountInfo)[0];
         console.log(`User ${account.accountId.toString()} data changed`);
 
-        saveUser(orm, account.accountId, userChain);
+        saveUser(orm, account.accountId, userChain).catch((e) =>
+          console.error(`User ${account.accountId.toString()} save error`, e)
+        );
       } catch {
         console.log(`${account.accountId} not matched any discriminator`);
       }

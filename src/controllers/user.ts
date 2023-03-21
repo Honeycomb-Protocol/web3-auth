@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/update", async (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
 
-  const { name } = req.body;
+  const { name, bio } = req.body;
 
   if (!req.orm) return response.error("ORM not found");
 
@@ -18,7 +18,8 @@ router.post("/update", async (req: Request, res: Response) => {
 
   if (!user) return response.notFound("User not found");
 
-  user.name = name;
+  !!name && (user.name = name);
+  !!bio && (user.bio = bio);
   req.session.web3User = user.toJSON();
   response.ok();
 });

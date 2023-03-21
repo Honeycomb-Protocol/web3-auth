@@ -63,14 +63,20 @@ export class User extends BaseEntity<User, "address"> implements IUser {
 
   @Property({
     type: "string",
+  })
+  wallets!: Wallets;
+
+  @Property({
+    type: "string",
     nullable: true,
   })
   name?: string;
 
   @Property({
     type: "string",
+    nullable: true,
   })
-  wallets!: Wallets;
+  bio?: string;
 
   constructor(address: PublicKey, wallets: Wallets) {
     super();
