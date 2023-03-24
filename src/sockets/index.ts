@@ -19,6 +19,9 @@ export async function saveUser(
       primary_wallet: userChain.primaryWallet,
       secondary_wallets: userChain.secondaryWallets,
     }),
+    username: userChain.username,
+    name: userChain.name,
+    bio: userChain.bio,
   });
   return orm.em.flush();
 }

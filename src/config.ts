@@ -21,17 +21,8 @@ const config = {
 } as { [k: string]: string };
 export default config;
 
-export const projects = JSON.parse(
-  fs.readFileSync("./projects.json").toString()
-);
-export async function getHoneycomb(
-  projectName: string,
-  opts?: web3.ConfirmOptions
-) {
-  const project: Project = projects[projectName];
-  if (!project) throw new Error("Project not found");
-
-  const RPC = project.rpc || config.rpc_url;
+export async function getHoneycomb(opts?: web3.ConfirmOptions) {
+  const RPC = config.rpc_url;
 
   if (!opts) {
     opts = {
@@ -41,15 +32,7 @@ export async function getHoneycomb(
   }
 
   const honeycomb = new Honeycomb(new web3.Connection(RPC, opts));
-  honeycomb.use(
-    identityModule(web3.Keypair.fromSecretKey(Uint8Array.from(project.driver)))
-  );
-  honeycomb.use(
-    await HoneycombProject.fromAddress(
-      honeycomb.connection,
-      new web3.PublicKey(project.address)
-    )
-  );
+  honeycomb.use(identityModule(web3.Keypair.generate()));
 
   return honeycomb;
 }

@@ -1,3 +1,4 @@
+import fs from "fs";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -44,11 +45,16 @@ app.use(
   })
 );
 
+if (fs.existsSync("./uploads")) {
+  fs.mkdirSync("./uplaods");
+}
+app.use("/u", express.static("./uploads"));
+
 app.use("/check", (_, res) => res.status(200).send("Server Running..."));
 
 (async () => {
   const orm = await connectDB(process.env.DB_NAME || "temp_db");
-  const honeycomb = await getHoneycomb("devnet");
+  const honeycomb = await getHoneycomb();
 
   await refreshData(honeycomb, orm);
   await startSocket(honeycomb, orm);

@@ -9,6 +9,10 @@ export interface IWallets {
 export interface IUser {
   address: PublicKey;
   wallets: IWallets;
+  username: string | null;
+  name: string | null;
+  bio: string | null;
+  pfp: string | null;
 }
 
 export class Wallets implements IWallets {
@@ -68,15 +72,25 @@ export class User extends BaseEntity<User, "address"> implements IUser {
 
   @Property({
     type: "string",
-    nullable: true,
+    unique: true,
   })
-  name?: string;
+  username!: string;
+
+  @Property({
+    type: "string",
+  })
+  name!: string;
+
+  @Property({
+    type: "string",
+  })
+  bio!: string;
 
   @Property({
     type: "string",
     nullable: true,
   })
-  bio?: string;
+  pfp!: string;
 
   constructor(address: PublicKey, wallets: Wallets) {
     super();
