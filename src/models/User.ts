@@ -72,7 +72,6 @@ export class User extends BaseEntity<User, "address"> implements IUser {
 
   @Property({
     type: "string",
-    unique: true,
   })
   username!: string;
 
