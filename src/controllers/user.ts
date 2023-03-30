@@ -1,36 +1,46 @@
-import fs from "fs";
+import * as web3 from "@solana/web3.js";
 import express, { Response } from "express";
-import { multer } from "../middlewares";
-import { User } from "../models";
 import { Request } from "../types";
 import { ResponseHelper } from "../utils";
 
 const router = express.Router();
 
-router.post(
-  "/pfp",
-  multer.single("pfp"),
-  async (req: Request, res: Response) => {
-    const response = new ResponseHelper(res);
+router.post("/addWallet", async (req: Request, res: Response) => {
+  const response = new ResponseHelper(res);
 
-    if (!req.file) return response.badRequest("File not provided");
+  if (!req.honeycomb) return response.error("Honey");
+  if (!req.body.tx || !req.body.blockhash)
+    return response.badRequest("Tx not found in body");
 
-    if (!req.orm) return response.error("ORM not found");
-
-    const user = await req.orm.em.findOne(User, {
-      address: req.user?.address,
-    });
-
-    if (!user) return response.notFound("User not found");
-
-    if (user.pfp) {
-      fs.rmSync(`./uploads/${user.pfp}`);
-    }
-
-    user.pfp = req.file.filename;
-
-    response.ok();
+  let tx: web3.Transaction;
+  try {
+    tx = web3.Transaction.from(req.body.tx);
+  } catch {
+    return response.badRequest("Tx must be a buffer");
   }
-);
+
+  tx = await req.honeycomb.identity().signTransaction(tx);
+
+  const signature = await req.honeycomb.connection.sendRawTransaction(
+    tx.serialize(),
+    { skipPreflight: true }
+  );
+
+  let confirmResponse: web3.RpcResponseAndContext<web3.SignatureResult> | null =
+    null;
+  if (req.body.blockhash) {
+    try {
+      confirmResponse = await req.honeycomb.connection.confirmTransaction({
+        signature,
+        blockhash: req.body.blockhash.blockhash,
+        lastValidBlockHeight: req.body.blockhash.lastValidBlockHeight,
+      });
+    } catch (e) {
+      return response.error("Transaction failed to confirm", e);
+    }
+  }
+
+  return response.ok("Transaction successfull", { signature, confirmResponse });
+});
 
 export default router;

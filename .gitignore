@@ -10,3 +10,4 @@ dist
 projects.json
 *db*
 *.sqlite
+*key*

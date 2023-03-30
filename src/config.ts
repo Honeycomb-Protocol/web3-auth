@@ -1,12 +1,6 @@
 import * as web3 from "@solana/web3.js";
-import fs from "fs";
 import dotenv from "dotenv";
-import { Project } from "./types";
-import {
-  Honeycomb,
-  HoneycombProject,
-  identityModule,
-} from "@honeycomb-protocol/hive-control";
+import { Honeycomb, identityModule } from "@honeycomb-protocol/hive-control";
 
 dotenv.config();
 
