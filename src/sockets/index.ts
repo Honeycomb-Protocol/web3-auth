@@ -22,6 +22,7 @@ export async function saveUser(
     username: userChain.username,
     name: userChain.name,
     bio: userChain.bio,
+    pfp: userChain.pfp,
   });
   return orm.em.flush();
 }
