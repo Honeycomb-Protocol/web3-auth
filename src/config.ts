@@ -1,4 +1,5 @@
 import * as web3 from "@solana/web3.js";
+import fs from "fs";
 import dotenv from "dotenv";
 import { Honeycomb, identityModule } from "@honeycomb-protocol/hive-control";
 
@@ -26,7 +27,13 @@ export async function getHoneycomb(opts?: web3.ConfirmOptions) {
   }
 
   const honeycomb = new Honeycomb(new web3.Connection(RPC, opts));
-  honeycomb.use(identityModule(web3.Keypair.generate()));
+  honeycomb.use(
+    identityModule(
+      web3.Keypair.fromSecretKey(
+        Uint8Array.from(JSON.parse(fs.readFileSync("./key.json").toString()))
+      )
+    )
+  );
 
   return honeycomb;
 }

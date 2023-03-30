@@ -10,16 +10,30 @@ router.post("/addWallet", async (req: Request, res: Response) => {
 
   if (!req.honeycomb) return response.error("Honey");
   if (!req.body.tx || !req.body.blockhash)
-    return response.badRequest("Tx not found in body");
+    return response.badRequest("Tx or blockhash not found in body");
+
+  if (req.body.tx.type !== "Buffer")
+    return response.badRequest("Tx must be a buffer");
 
   let tx: web3.Transaction;
   try {
-    tx = web3.Transaction.from(req.body.tx);
-  } catch {
-    return response.badRequest("Tx must be a buffer");
+    tx = web3.Transaction.from(Buffer.from(req.body.tx.data));
+  } catch (e: any) {
+    console.error(e);
+    return response.badRequest(e.message);
   }
 
-  tx = await req.honeycomb.identity().signTransaction(tx);
+  console.log({
+    tx: tx.signatures.map((x) => x.publicKey.toString()),
+    identity: req.honeycomb.identity().publicKey.toString(),
+  });
+
+  try {
+    tx = await req.honeycomb.identity().signTransaction(tx);
+  } catch (e) {
+    console.error(e);
+    return response.error("Failed to sign transaction", e);
+  }
 
   const signature = await req.honeycomb.connection.sendRawTransaction(
     tx.serialize(),
@@ -36,6 +50,7 @@ router.post("/addWallet", async (req: Request, res: Response) => {
         lastValidBlockHeight: req.body.blockhash.lastValidBlockHeight,
       });
     } catch (e) {
+      console.error(e);
       return response.error("Transaction failed to confirm", e);
     }
   }
