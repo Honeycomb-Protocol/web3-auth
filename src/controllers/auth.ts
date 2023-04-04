@@ -102,7 +102,7 @@ router.get("/session-user", (req: Request, res: Response) => {
 router.get("/user", authenticate, (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
   if (req.user) {
-    return response.ok(undefined, req.user);
+    return response.ok(undefined, req.user.toJSON());
   } else {
     return response.unauthorized();
   }
