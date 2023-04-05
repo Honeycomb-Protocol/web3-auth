@@ -1,4 +1,3 @@
-import { TransactionSignature } from "@honeycomb-protocol/hive-control";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import express, { Response } from "express";
 import { authenticate } from "../middlewares";
@@ -6,6 +5,7 @@ import { User } from "../models";
 
 import { Request } from "../types";
 import { create_token, ResponseHelper, verify_signature } from "../utils";
+import { saveUser } from "../sockets";
 const sendSignerHTMLInAuth = false;
 
 const router = express.Router();
@@ -14,16 +14,32 @@ router.post("/request/:signerWallet", async (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
   const { signerWallet } = req.params;
 
-  if (!(signerWallet && req.orm)) {
+  if (!(req.orm && req.honeycomb)) {
     return response.error("ORM not found");
   }
-  const user = await req.orm.em.findOne(User, {
+  if (!signerWallet)
+    return response.badRequest("Signer wallet not found in params");
+
+  let user = await req.orm.em.findOne(User, {
     wallets: {
       $like: `%${signerWallet}%`,
     },
   });
   if (!user) {
-    return response.notFound("User not found!");
+    try {
+      const { user: address } = await req.honeycomb
+        .identity()
+        .fetch()
+        .walletResolver(new PublicKey(signerWallet));
+      const userChain = await req.honeycomb.identity().fetch().user(address);
+      await saveUser(req.orm, address, userChain.data);
+      user = await req.orm.em.findOne(User, {
+        address,
+      });
+      if (!user) throw new Error("User not found");
+    } catch {
+      return response.notFound("User not found!");
+    }
   }
 
   const nonce = Keypair.generate().publicKey;
