@@ -18,7 +18,7 @@ const port = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "profiles.honeycombprotocol.com"],
+    origin: ["http://localhost:3000", "https://profiles.honeycombprotocol.com"],
     methods: ["POST", "PUT", "GET", "DELETE"],
     credentials: true,
   })
