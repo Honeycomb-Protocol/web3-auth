@@ -39,7 +39,11 @@ router.post("/addWallet", async (req: Request, res: Response) => {
       // { skipPreflight: true }
     );
     console.log("Sent tx");
-  } catch (e) {
+  } catch (e: any) {
+    if ((e.logs[3] as string).includes("already in use")) {
+      return response.conflict("This wallet is already in use");
+    }
+
     console.error(e);
     return response.error("Failed to send transaction", e);
   }
