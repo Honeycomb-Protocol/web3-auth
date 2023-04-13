@@ -119,12 +119,12 @@ router.get("/user", authenticate, (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
   if (req.user) {
     let user = req.user.toJSON();
-    user.wallets = {
-      primary_wallet: user.wallets.primary_wallet.toString(),
-      secondary_wallets: user.wallets.secondary_wallets.map((x) =>
-        x.toString()
-      ) as any,
-    };
+    // user.wallets = {
+    //   primary_wallet: user.wallets.primary_wallet.toString(),
+    //   secondary_wallets: user.wallets.secondary_wallets.map((x) =>
+    //     x.toString()
+    //   ) as any,
+    // };
     return response.ok(undefined, user);
   } else {
     return response.unauthorized();

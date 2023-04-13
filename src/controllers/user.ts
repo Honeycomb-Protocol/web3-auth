@@ -3,10 +3,12 @@ import express, { Response } from "express";
 import { Request } from "../types";
 import { ResponseHelper } from "../utils";
 import { createCtx } from "@honeycomb-protocol/hive-control";
+import { User, Wallets } from "../models";
+import { authenticate } from "../middlewares";
 
 const router = express.Router();
 
-router.post("/addWallet", async (req: Request, res: Response) => {
+router.post("/addWallet", authenticate, async (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
 
   if (!req.honeycomb) return response.error("Honey");
@@ -68,7 +70,7 @@ router.post("/addWallet", async (req: Request, res: Response) => {
   return response.ok("Transaction successfull", { signature, confirmResponse });
 });
 
-router.post("/edit", async (req: Request, res: Response) => {
+router.post("/edit", authenticate, async (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
 
   // try {
@@ -114,6 +116,32 @@ router.post("/edit", async (req: Request, res: Response) => {
     console.error(e);
     return response.error(e.message, e);
   }
+});
+
+router.get("/:identity", async (req: Request, res) => {
+  const response = new ResponseHelper(res);
+
+  return req.orm?.em
+    .findOne(User, {
+      $or: [
+        {
+          address: req.params.identity,
+        },
+        {
+          wallets: {
+            $like: `%${req.params.identity}%`,
+          },
+        },
+      ],
+    })
+    .then((profile) => {
+      if (!profile) return response.notFound();
+      const profileNew = profile.toJSON();
+      // @ts-ignore
+      profileNew.wallets = Wallets.parse(profile.wallets);
+      return response.ok(undefined, profileNew);
+    })
+    .catch((e) => response.error(e.message));
 });
 
 export default router;
