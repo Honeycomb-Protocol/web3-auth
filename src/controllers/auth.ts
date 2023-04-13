@@ -1,7 +1,7 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
 import express, { Response } from "express";
 import { authenticate } from "../middlewares";
-import { User } from "../models";
+import { User, Wallets } from "../models";
 
 import { Request } from "../types";
 import { create_token, ResponseHelper, verify_signature } from "../utils";
@@ -118,7 +118,14 @@ router.get("/session-user", (req: Request, res: Response) => {
 router.get("/user", authenticate, (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
   if (req.user) {
-    return response.ok(undefined, req.user.toJSON());
+    let user = req.user.toJSON();
+    user.wallets = {
+      primary_wallet: user.wallets.primary_wallet.toString(),
+      secondary_wallets: user.wallets.secondary_wallets.map((x) =>
+        x.toString()
+      ) as any,
+    };
+    return response.ok(undefined, user);
   } else {
     return response.unauthorized();
   }
