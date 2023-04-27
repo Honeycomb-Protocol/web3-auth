@@ -12,7 +12,7 @@ const config = {
   request_limit: process.env.REQUEST_LIMIT || "100kb",
   jwt_secret: process.env.JWT_SECRET || "secret",
   rpc_url: process.env.RPC_URL || "https://api.mainnet-beta.solana.com",
-  db_name: process.env.DB_NAME || "temp",
+  db_name: process.env.DB_NAME || "database",
 } as { [k: string]: string };
 export default config;
 
