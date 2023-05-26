@@ -6,6 +6,7 @@ import { User, Wallets } from "../models";
 import { Request } from "../types";
 import { create_token, ResponseHelper, verify_signature } from "../utils";
 import { saveUser } from "../sockets";
+import { Honeycomb, User as UserChain, } from "@honeycomb-protocol/hive-control";
 const sendSignerHTMLInAuth = false;
 
 const router = express.Router();
@@ -32,6 +33,7 @@ router.post("/request/:signerWallet", async (req: Request, res: Response) => {
         .fetch()
         .walletResolver(new PublicKey(signerWallet));
       const userChain = await req.honeycomb.identity().fetch().user(address);
+      console.log("userChain", userChain)
       await saveUser(req.orm, address, userChain.data);
       user = await req.orm.em.findOne(User, {
         address,
@@ -107,6 +109,25 @@ router.post("/refresh", (req: Request, res) => {
   });
 });
 
+router.get("/verify/username/:name", async (req: Request, res: Response) => {
+  const response = new ResponseHelper(res);
+  const { name } = req.params;
+  if (!name) return response.badRequest("Username not found in params");
+  if (!req.honeycomb) return response.error("Honeycomb not found");
+  try {
+    const user = await req.orm?.em.findOne(User, {
+      username: name,
+    });
+    response.ok("success", {
+      available: !!!user,
+      username: !user ? name : user.username,
+    })
+  } catch (err: any) {
+    console.error(err)
+    return response.error(err.message)
+  }
+});
+
 router.get("/session-user", (req: Request, res: Response) => {
   if (req.session.web3User) {
     res.send("You are logged in as " + req.session.web3User.address);
@@ -119,12 +140,6 @@ router.get("/user", authenticate, (req: Request, res: Response) => {
   const response = new ResponseHelper(res);
   if (req.user) {
     let user = req.user.toJSON();
-    // user.wallets = {
-    //   primary_wallet: user.wallets.primary_wallet.toString(),
-    //   secondary_wallets: user.wallets.secondary_wallets.map((x) =>
-    //     x.toString()
-    //   ) as any,
-    // };
     return response.ok(undefined, user);
   } else {
     return response.unauthorized();
