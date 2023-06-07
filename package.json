@@ -9,11 +9,12 @@
     "dev": "nodemon ./src/index.ts"
   },
   "dependencies": {
-    "@honeycomb-protocol/hive-control": "^0.0.97",
+    "@honeycomb-protocol/hive-control": "^0.1.5",
     "@mikro-orm/core": "^5.6.14",
     "@mikro-orm/migrations": "^5.6.14",
     "@mikro-orm/sqlite": "^5.6.14",
     "@project-serum/anchor": "^0.25.0",
+    "@solana/spl-account-compression": "^0.1.8",
     "better-sqlite3": "^8.2.0",
     "better-sqlite3-session-store": "^0.1.0",
     "bs58": "^5.0.0",

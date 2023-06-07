@@ -2,7 +2,6 @@ import * as web3 from "@solana/web3.js";
 import express, { Response } from "express";
 import { Request } from "../types";
 import { ResponseHelper } from "../utils";
-import { createCtx } from "@honeycomb-protocol/hive-control";
 import { User, Wallets } from "../models";
 import { authenticate } from "../middlewares";
 
@@ -14,6 +13,11 @@ router.post("/addWallet", authenticate, async (req: Request, res: Response) => {
   if (!req.honeycomb) return response.error("Honey");
   if (!req.body.tx || !req.body.blockhash)
     return response.badRequest("Tx or blockhash not found in body");
+
+  const balance = await req.honeycomb
+    .rpc()
+    .getBalance(req.honeycomb.identity().address);
+  if (balance / 1000000000 < 0.001) return response.error("Not enough SOL");
 
   if (req.body.tx.type !== "Buffer")
     return response.badRequest("Tx must be a buffer");
@@ -77,11 +81,14 @@ router.post("/edit", authenticate, async (req: Request, res: Response) => {
   if (!req.orm) return response.error("ORM not found");
   if (!req.honeycomb) return response.error("Honey");
   if (!req.user) return response.unauthorized();
-
+  const balance = await req.honeycomb
+    .rpc()
+    .getBalance(req.honeycomb.identity().address);
+  if (balance / 1000000000 < 0.001) return response.error("Not enough SOL");
   // const ctx = await req.honeycomb.rpc().sendAndConfirmTransaction(
-  //   createCtx([
+  //   ([
   //     web3.SystemProgram.transfer({
-  //       fromPubkey: req.honeycomb.identity().publicKey,
+  //       fromPubkey: req.honeycomb.identity().address,
   //       toPubkey: web3.Keypair.generate().publicKey,
   //       lamports: 1000000,
   //     }),
