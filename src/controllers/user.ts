@@ -151,4 +151,30 @@ router.get("/:identity", async (req: Request, res) => {
     .catch((e) => response.error(e.message));
 });
 
+router.get("/search/:name", async (req: Request, res) => {
+  const response = new ResponseHelper(res);
+
+  return req.orm?.em
+    .find(User, {
+      $or: [
+        {
+          name: {
+            $like: `%${req.params.name}%`,
+          },
+        },
+        {
+          username: {
+            $like: `%${req.params.name}%`,
+          },
+        },
+      ],
+    })
+    .then((profiles) => {
+      if (!profiles) return response.notFound();
+      const profilesNew = profiles.map((profile) => profile.toJSON());
+      return response.ok(undefined, profilesNew);
+    })
+    .catch((e) => response.error(e.message));
+});
+
 export default router;
