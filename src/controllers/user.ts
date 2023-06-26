@@ -135,6 +135,9 @@ router.get("/:identity", async (req: Request, res) => {
           address: req.params.identity,
         },
         {
+          username: req.params.identity,
+        },
+        {
           wallets: {
             $like: `%${req.params.identity}%`,
           },
