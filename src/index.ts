@@ -18,7 +18,9 @@ const port = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS || "*",
+    origin: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(",")
+      : "*",
     methods: ["POST", "PUT", "GET", "DELETE", "OPTIONS"],
     credentials: true,
   })
