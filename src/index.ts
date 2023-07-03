@@ -44,7 +44,7 @@ app.use(
     store: sessionStore,
     cookie: {
       secure: process.env.PROD === "true",
-      httpOnly: true,
+      httpOnly: process.env.PROD !== "true",
       sameSite: "none",
     },
   })
