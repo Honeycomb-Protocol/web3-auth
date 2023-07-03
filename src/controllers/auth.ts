@@ -6,7 +6,7 @@ import { User, Wallets } from "../models";
 import { Request } from "../types";
 import { create_token, ResponseHelper, verify_signature } from "../utils";
 import { saveUser } from "../sockets";
-import { Honeycomb, User as UserChain, } from "@honeycomb-protocol/hive-control";
+import { Honeycomb, User as UserChain } from "@honeycomb-protocol/hive-control";
 const sendSignerHTMLInAuth = false;
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.post("/request/:signerWallet", async (req: Request, res: Response) => {
         .fetch()
         .walletResolver(new PublicKey(signerWallet));
       const userChain = await req.honeycomb.identity().fetch().user(address);
-      console.log("userChain", userChain)
+      console.log("userChain", userChain);
       await saveUser(req.orm, address, userChain.data);
       user = await req.orm.em.findOne(User, {
         address,
@@ -68,7 +68,7 @@ router.post("/verify/:signature", async (req: Request, res: Response) => {
   const { userAddress, signerWallet, nonce } = req.session.web3UserAuthReq;
 
   if (!(userAddress && signerWallet && nonce)) {
-    return response.notFound("Authentication session not initialized!");
+    return response.notFound("Authentication session not valid!");
   }
 
   const user = await req.orm.em.findOne(User, {
@@ -121,10 +121,10 @@ router.get("/verify/username/:name", async (req: Request, res: Response) => {
     response.ok("success", {
       available: !!!user,
       username: !user ? name : user.username,
-    })
+    });
   } catch (err: any) {
-    console.error(err)
-    return response.error(err.message)
+    console.error(err);
+    return response.error(err.message);
   }
 });
 

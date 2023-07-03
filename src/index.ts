@@ -37,13 +37,18 @@ app.use(
     extended: true,
   })
 );
+app.set("trust proxy", 1);
 app.use(
   session({
-    secret: "keyboard cat",
+    secret: process.env.SESSION_SECRET || "keyboard cat",
     resave: true,
     saveUninitialized: true,
     store: sessionStore,
-    // cookie: { secure: true },
+    cookie: {
+      secure: process.env.PROD === "true",
+      httpOnly: process.env.PROD !== "true",
+      sameSite: "lax",
+    },
   })
 );
 
