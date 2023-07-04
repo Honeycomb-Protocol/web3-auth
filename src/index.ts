@@ -18,7 +18,9 @@ const port = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(",")
+      : "*",
     methods: ["POST", "PUT", "GET", "DELETE", "OPTIONS"],
     credentials: true,
   })
@@ -45,7 +47,7 @@ app.use(
     cookie: {
       secure: process.env.PROD === "true",
       httpOnly: process.env.PROD !== "true",
-      sameSite: "none",
+      sameSite: "lax",
     },
   })
 );
