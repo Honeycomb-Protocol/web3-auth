@@ -1,7 +1,7 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
 import express, { Response } from "express";
 import { authenticate } from "../middlewares";
-import { User, Wallets } from "../models";
+import { AuthRequest, User, Wallets } from "../models";
 
 import { Request } from "../types";
 import { create_token, ResponseHelper, verify_signature } from "../utils";
@@ -45,57 +45,90 @@ router.post("/request/:signerWallet", async (req: Request, res: Response) => {
   }
 
   const nonce = Keypair.generate().publicKey;
-  req.session.web3UserAuthReq = {
-    userAddress: user.address,
-    signerWallet,
-    nonce,
-  };
-  if (!sendSignerHTMLInAuth)
+  // req.session.web3UserAuthReq = {
+  //   userAddress: user.address,
+  //   signerWallet,
+  //   nonce,
+  // };
+  // if (!sendSignerHTMLInAuth)
+  //   return response.ok("Authentication session initialized", {
+  //     nonce,
+  //   });
+
+  try {
+    await req.orm.em.upsert(
+      AuthRequest,
+      {
+        userAddress: user.address,
+        signerWallet,
+        nonce,
+      },
+      {
+        upsert: true,
+      }
+    );
     return response.ok("Authentication session initialized", {
       nonce,
     });
+  } catch (e: any) {
+    return response.error(e.message, e);
+  }
 });
 
-router.post("/verify/:signature", async (req: Request, res: Response) => {
-  const response = new ResponseHelper(res);
-  const { signature } = req.params;
+router.post(
+  "/verify/:signer/:signature",
+  async (req: Request, res: Response) => {
+    const response = new ResponseHelper(res);
+    const { signer, signature } = req.params;
 
-  if (!req.orm || !req.session) throw new Error("ORM or Session not found");
+    if (!req.orm || !req.session) throw new Error("ORM or Session not found");
 
-  if (!req.session.web3UserAuthReq) {
-    return response.notFound("Authentication session not initialized!");
-  }
-  const { userAddress, signerWallet, nonce } = req.session.web3UserAuthReq;
+    // if (!req.session.web3UserAuthReq) {
+    //   return response.notFound("Authentication session not initialized!");
+    // }
+    // const { userAddress, signerWallet, nonce } = req.session.web3UserAuthReq;
 
-  if (!(userAddress && signerWallet && nonce)) {
-    return response.notFound("Authentication session not valid!");
-  }
+    // if (!(userAddress && signerWallet && nonce)) {
+    //   return response.notFound("Authentication session not valid!");
+    // }
 
-  const user = await req.orm.em.findOne(User, {
-    address: userAddress,
-    wallets: {
-      $like: `%${signerWallet}%`,
-    },
-  });
-  if (!user) {
-    return response.notFound("User not found!");
-  }
+    const authRequest = await req.orm.em.findOne(AuthRequest, {
+      signerWallet: signer,
+    });
+    if (!authRequest)
+      return response.notFound("Authentication session not initialized!");
+    const { userAddress, signerWallet, nonce } = authRequest;
 
-  const verified = await verify_signature(signature, signerWallet, nonce).catch(
-    console.error
-  );
-  if (!verified) {
+    const user = await req.orm.em.findOne(User, {
+      address: userAddress,
+      wallets: {
+        $like: `%${signerWallet}%`,
+      },
+    });
+    if (!user) {
+      return response.notFound("User not found!");
+    }
+
+    const verified = await verify_signature(
+      signature,
+      signerWallet.toString(),
+      nonce.toString()
+    ).catch(console.error);
+
     delete req.session.web3UserAuthReq;
-    return response.error("Verification failed, Auth session closed;");
+    await req.orm.em.removeAndFlush(authRequest);
+
+    if (!verified) {
+      return response.error("Verification failed, Auth session closed;");
+    }
+    req.session.web3User = user.toJSON();
+    response.ok("Authenticated", {
+      auth_token: create_token({
+        user_address: user.address,
+      }),
+    });
   }
-  delete req.session.web3UserAuthReq;
-  req.session.web3User = user.toJSON();
-  response.ok("Authenticated", {
-    auth_token: create_token({
-      user_address: user.address,
-    }),
-  });
-});
+);
 
 router.post("/refresh", (req: Request, res) => {
   const response = new ResponseHelper(res);
