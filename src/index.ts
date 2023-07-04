@@ -16,15 +16,15 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
-app.use(
+app.use((req, res, next) => {
   cors({
-    origin: process.env.CORS_ORIGINS
-      ? process.env.CORS_ORIGINS.split(",")
-      : "*",
+    origin:
+      req.headers.origin ||
+      (process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : "*"),
     methods: ["POST", "PUT", "GET", "DELETE", "OPTIONS"],
     credentials: true,
-  })
-);
+  })(req, res, next);
+});
 
 app.use(morgan("dev"));
 
